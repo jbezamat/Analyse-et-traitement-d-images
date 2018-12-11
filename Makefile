@@ -1,12 +1,13 @@
 CPPFLAGS=-I/opt/opencv/include 
-CXXFLAGS=-Wall -Wextra -Werror
+CXXFLAGS=-Wall -Wextra 
 LDFLAGS=-Wl,-R/opt/opencv/lib -L/opt/opencv/lib
 LDLIBS=\
 	-lopencv_core\
 	-lopencv_imgproc\
 	-lopencv_highgui
 BIN=\
-	line_detector
+	line_detector\
+	cursors
 
 .PHONY: all 
 all: $(BIN)
