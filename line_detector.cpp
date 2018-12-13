@@ -31,23 +31,42 @@ void process(const char *imsname){
     // Convert from BGR to HSV colorspace
   cvtColor(image, frame_HSV, COLOR_BGR2HSV);
 
+  blur(frame_HSV, frame_HSV, Size(5,5));
+
+  //Modif d'histogramme pour faire ressortir le blanc/vert ?
+
     //Threshold
   inRange(frame_HSV, Scalar(low_H, low_S, low_V), Scalar(high_H, high_S, high_V), frame_threshold);
     //Filtering of binarymake
   imshow("binavant", frame_threshold);
     waitKey(0);
+  for(int i=0; i < 3; i++){
+    //erode(frame_threshold, frame_threshold, kernel);
+    morphologyEx(frame_threshold, frame_threshold, MORPH_OPEN, kernel);
+  }
 
-  morphologyEx(frame_threshold, frame_threshold, MORPH_OPEN, kernel);
-  morphologyEx(frame_threshold, frame_threshold, MORPH_CLOSE, kernel2);
-    //Finding the lines from the rest with White/Green filter
+  imshow("binaprès", frame_threshold);
+    waitKey(0);
+  //morphologyEx(frame_threshold, frame_threshold, MORPH_OPEN, kernel);
+  //morphologyEx(frame_threshold, frame_threshold, MORPH_CLOSE, kernel2);
+
+  vector<Vec4i> lines;
+  HoughLinesP(frame_threshold, lines, 1, CV_PI/180, 100, 10, 500 );
+  for( size_t i = 0; i < lines.size(); i++ )
+  {
+      line( image, Point(lines[i][0], lines[i][1]),
+          Point(lines[i][2], lines[i][3]), Scalar(0,0,255), 3, 8 );
+  }
+  //Finding the lines from the rest with White/Green filter
   
 
-  namedWindow("origin", WINDOW_AUTOSIZE);
-  namedWindow("bin", WINDOW_AUTOSIZE);
-  imshow("origin", image);
-  imshow("bin", frame_threshold);
+  // namedWindow("origin", WINDOW_AUTOSIZE);
+  // namedWindow("bin", WINDOW_AUTOSIZE);
+  // //imshow("origin", image);
+  // imshow("bin", frame_threshold);
+  imshow("final", image);
 
-  imwrite("test_bin_simple.png", frame_threshold);
+  //imwrite("test_bin_simple.png", frame_threshold);
 
   waitKey(0);
 }

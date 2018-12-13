@@ -30,6 +30,24 @@ test:
 	./line_detector data/log4/46-rgb.png
 	./line_detector data/log4/23-rgb.png
 
+# .PHONY: cursors
+# cursors:
+# 	./cursors data/log1/144-rgb.png
+# 	./cursors data/log1/157-rgb.png
+# 	./cursors data/log1/171-rgb.png
+
+# 	./cursors data/log2/179-rgb.png
+# 	./cursors data/log2/194-rgb.png
+# 	./cursors data/log2/338-rgb.png
+
+# 	./cursors data/log3/054-rgb.png
+# 	./cursors data/log3/076-rgb.png
+# 	./cursors data/log3/243-rgb.png
+
+# 	./cursors data/log4/04-rgb.png
+# 	./cursors data/log4/46-rgb.png
+# 	./cursors data/log4/23-rgb.png
+
 .PHONY: clean
 clean:
 	$(RM) *~ *.png

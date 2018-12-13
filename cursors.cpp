@@ -76,10 +76,11 @@ void process(const char *imsname){
       }
       // Convert from BGR to HSV colorspace
       cvtColor(image, frame_HSV, COLOR_BGR2HSV);
+      blur(frame_HSV, frame_HSV, Size(10,10));
       // Detect the object based on HSV Range Values
       inRange(frame_HSV, Scalar(low_H, low_S, low_V), Scalar(high_H, high_S, high_V), frame_threshold);
       // Show the frames
-      imshow(window_capture_name, image);
+      imshow(window_capture_name, frame_HSV);
       imshow(window_detection_name, frame_threshold);
       char key = (char) waitKey(30);
       if (key == 'q' || key == 27)
