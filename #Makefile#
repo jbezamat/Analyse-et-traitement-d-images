@@ -5,16 +5,12 @@ LDLIBS=\
 	-lopencv_core\
 	-lopencv_imgproc\
 	-lopencv_highgui
-
 BIN=\
 	line_detector\
-	cursors\
-	line_detecto_test\
-	hough
+	cursors
 
 .PHONY: all
 all: $(BIN)
-
 
 .PHONY: test
 test:
