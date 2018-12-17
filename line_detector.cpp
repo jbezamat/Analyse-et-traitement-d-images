@@ -7,8 +7,10 @@
 using namespace cv;
 using namespace std;
 
-int low_H = 15, low_S = 140, low_V = 65;
+int low_H = 7, low_S = 140, low_V = 65;
 int high_H = 37, high_S = 255, high_V = 255;
+
+
 bool isImgBlack(Mat img) {
     for(int i = 0; i < img.rows; i++) {
         for(int j = 0; j < img.cols; j++) {
@@ -55,6 +57,7 @@ Mat skeleton(Mat se, Mat ims){
 void process(const char *imsname){
   Mat image;
   image = imread(imsname, CV_LOAD_IMAGE_COLOR);
+
   if (!image.data)
   {
     cout << "Could not open or find the image" << '\n';
@@ -66,12 +69,11 @@ void process(const char *imsname){
 
   blur(image, image, Size(10,10));
 
-  Mat frame, frame_HSV, frame_threshold, frame_threshold_terrain;
+  Mat frame_HSV, frame_threshold, frame_threshold_terrain;
     // Convert from BGR to HSV colorspace
   cvtColor(image, frame_HSV, COLOR_BGR2HSV);
 
   inRange(frame_HSV, Scalar(0, 150, 150), Scalar(255, 255, 255), frame_threshold_terrain);
-  inRange(frame_HSV, Scalar(low_H, low_S, low_V), Scalar(high_H, high_S, high_V), frame_threshold);
 
   for(int i = 0; i < 5; i++){
     morphologyEx(frame_threshold_terrain, frame_threshold_terrain, MORPH_CLOSE, kernel2);
@@ -80,6 +82,8 @@ void process(const char *imsname){
   //bitwise_not(frame_threshold_terrain, frame_threshold_terrain);
   imshow("ap", frame_threshold_terrain);
   waitKey('0');
+
+  inRange(frame_HSV, Scalar(low_H, low_S, low_V), Scalar(high_H, high_S, high_V), frame_threshold);
   imshow("apr", frame_threshold);
   waitKey('0');
 
@@ -99,26 +103,13 @@ void process(const char *imsname){
   Mat disk2 = imread("morphology/disk-2.png", CV_LOAD_IMAGE_GRAYSCALE);
   Mat disk10 = imread("morphology/disk10.png", CV_LOAD_IMAGE_GRAYSCALE);
   Mat open,squelette, dst, color_dst;
-  //2 closing
-  //---------
-  //1 closing disk2
 
-  
   morphologyEx(fr, fr, MORPH_CLOSE, disk2);
-  //imshow("close1",close1);
-  //waitKey(0);
-
-  //1 closing disk10
   morphologyEx(fr, fr, MORPH_CLOSE, disk10);
-  //imshow("close2",close2);
-  //waitKey(0);
-
-  //opening
-  //-------
   morphologyEx(fr, fr, MORPH_OPEN, disk2);
   morphologyEx(fr, open, MORPH_OPEN, disk10);
-  //imshow("open",open);
-  //waitKey(0);
+  imshow("open",open);
+  waitKey(0);
   
   //Skeleton
   //--------
@@ -128,7 +119,7 @@ void process(const char *imsname){
 
   //Canny
   Canny( squelette, dst, 50, 200, 3 );
-  cvtColor( dst, color_dst, CV_GRAY2BGR );
+  //cvtColor( dst, color_dst, CV_GRAY2BGR );
 
   //Hough
   vector<Vec4i> lines;
@@ -140,73 +131,49 @@ void process(const char *imsname){
     //Traitement des lignes sorties par Hough
     //---------------------------------------
     //Ajouter le coefficient directeur
-    double coefficients[lines.size()];
-    double label[lines.size()] = {0};
-    for( size_t i = 0; i < lines.size(); i++ )
-    {
-        //x(b)-x(a)
-        double dx=lines[i][2]-lines[i][0];
-        double dy=lines[i][3]-lines[i][1];
+  double coefficients[lines.size()];
+  double label[lines.size()] = {0};
+  for( size_t i = 0; i < lines.size(); i++ )
+  {
+      //x(b)-x(a)
+      double dx=lines[i][2]-lines[i][0];
+      double dy=lines[i][3]-lines[i][1];
 
-        double m=dy/dx;
+      double m=dy/dx;
 
-        //Ajouter dans le tableau
-        coefficients[i]=m;
-    }
-    int lab = 1;
-    for(int i = 0; i < lines.size(); i++){
+      //Ajouter dans le tableau
+      coefficients[i]=m;
+  }
+  int lab = 0;
+  for(int i = 0; i < lines.size(); i++){
+    if(label[i] == 0){
+      lab++;
       label[i] = lab;
       for(int j = i+1; j < lines.size(); j++){
-        if((label[j] == 0)&&(abs(coefficients[j]-coefficients[i])<1)){
+        if((label[j] == 0)&&(abs(coefficients[j]-coefficients[i])<0.1)){
           label[j] = label[i];
         }
+      } 
+    }   
+  }
+
+  for(int k = 1; k < lab; k++){
+    int R = rand()*255;
+    int G = rand()*255;
+    int B = rand()*255;
+    for( size_t i = 0; i < lines.size(); i++ )
+    {
+      if(label[i] == k){
+        line( image, Point(lines[i][0], lines[i][1]),
+        Point(lines[i][2], lines[i][3]), Scalar(R,G,B), 3, 8 );
       }
-      lab++;
     }
-
-    for(int k = 1; k < lab; k++){
-      int R = rand()*255;
-      int G = rand()*255;
-      int B = rand()*255;
-      for( size_t i = 0; i < lines.size(); i++ )
-      {
-        if(label[i] == k){
-          line( image, Point(lines[i][0], lines[i][1]),
-          Point(lines[i][2], lines[i][3]), Scalar(R,G,B), 3, 8 );
-        }
-      }
-    }
+  }
 
 
-    namedWindow( "Detected Lines", 1 );
-    imshow( "Detected Lines", image );
-    waitKey(0);
-
-    //Threshold
-    //Filtering of binarymake
-
-  //Canny(frame_threshold, frame_threshold, 50,300);
-  //imshow("binavant", frame_threshold);
-  //waitKey(0);
-  //morphologyEx(frame_threshold, frame_threshold, MORPH_OPEN, kernel);
-  //morphologyEx(frame_threshold, frame_threshold, MORPH_CLOSE, kernel2);
-
-  // vector<Vec4i> lines;
-  // HoughLinesP(frame_threshold, lines, 1, CV_PI/180, 20, 100, 900 );
-  // for( size_t i = 0; i < lines.size(); i++ )
-  // {
-  //     line( image, Point(lines[i][0], lines[i][1]),
-  //     Point(lines[i][2], lines[i][3]), Scalar(0,0,255), 3, 8 );
-  // }
-  // //Finding the lines from the rest with White/Green filter
-
-
-  // namedWindow("origin", WINDOW_AUTOSIZE);
-  // namedWindow("bin", WINDOW_AUTOSIZE);
-  // //imshow("origin", image);
-  // imshow("bin", frame_threshold);
-  //imshow("final", image);
-
+  namedWindow( "Detected Lines", 1 );
+  imshow( "Detected Lines", image );
+  waitKey(0);
 }
 
 void usage (const char *s){
