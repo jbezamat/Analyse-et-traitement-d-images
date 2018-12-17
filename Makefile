@@ -10,6 +10,7 @@ BIN=\
 	line_detector\
 	cursors\
 	line_detecto_test\
+	make-se\
 	hough
 
 .PHONY: all

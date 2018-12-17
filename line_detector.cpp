@@ -7,11 +7,53 @@
 using namespace cv;
 using namespace std;
 
-int low_H = 0, low_S = 180, low_V = 160;
-int high_H = 48, high_S = 255, high_V = 253;
+int low_H = 15, low_S = 140, low_V = 65;
+int high_H = 37, high_S = 255, high_V = 255;
+bool isImgBlack(Mat img) {
+    for(int i = 0; i < img.rows; i++) {
+        for(int j = 0; j < img.cols; j++) {
+            if(img.at<uchar>(i,j) > 0)
+                return false;
+        }
+    }
+    return true;
+}
+
+Mat skeleton(Mat se, Mat ims){
+
+  Mat imd(ims.rows, ims.cols, CV_8UC1);
+
+  Mat erosion(ims.rows, ims.cols, CV_8UC1);
+  Mat opening(ims.rows, ims.cols, CV_8UC1);
+
+  bool first = true;
+  //int i = 0;
+  do
+  {
+    //Erosion
+    if(first) {
+        first = false;
+        erosion = ims.clone();
+    }
+    else {
+      //erosion
+      erode(opening.clone(),erosion,se);
+    }
+
+    //Opening
+    morphologyEx(erosion, opening, MORPH_OPEN, se);
+
+    Mat diff(ims.rows, ims.cols, CV_8UC1);
+    diff = erosion - opening;
+
+    add(imd, diff, imd);
+  } while(!isImgBlack(opening));
+
+  return(imd);
+}
 
 void process(const char *imsname){
-  Mat image, open;
+  Mat image;
   image = imread(imsname, CV_LOAD_IMAGE_COLOR);
   if (!image.data)
   {
@@ -20,24 +62,22 @@ void process(const char *imsname){
   }
 
   Mat kernel = getStructuringElement(MORPH_RECT,Size(2,2));
-  //Mat kernel2 = getStructuringElement(MORPH_RECT,Size(40,40));
   Mat kernel2 = imread("disk-30.png", CV_LOAD_IMAGE_GRAYSCALE);
 
-
-  cvtColor(image,image, COLOR_BGR2HSV);
+  blur(image, image, Size(10,10));
 
   Mat frame, frame_HSV, frame_threshold, frame_threshold_terrain;
     // Convert from BGR to HSV colorspace
   cvtColor(image, frame_HSV, COLOR_BGR2HSV);
 
-  inRange(frame_HSV, Scalar(50, 0, 0), Scalar(120, 255, 255), frame_threshold_terrain);
+  inRange(frame_HSV, Scalar(0, 150, 150), Scalar(255, 255, 255), frame_threshold_terrain);
   inRange(frame_HSV, Scalar(low_H, low_S, low_V), Scalar(high_H, high_S, high_V), frame_threshold);
 
   for(int i = 0; i < 5; i++){
     morphologyEx(frame_threshold_terrain, frame_threshold_terrain, MORPH_CLOSE, kernel2);
   }
 
-  bitwise_not(frame_threshold_terrain, frame_threshold_terrain);
+  //bitwise_not(frame_threshold_terrain, frame_threshold_terrain);
   imshow("ap", frame_threshold_terrain);
   waitKey('0');
   imshow("apr", frame_threshold);
@@ -47,12 +87,100 @@ void process(const char *imsname){
 
   subtract(frame_threshold, frame_threshold_terrain, fr);
 
-  for(int i = 0; i < 4; i++){
-    morphologyEx(frame_threshold, frame_threshold, MORPH_CLOSE, kernel);
+  for(int i = 0; i < 2; i++){
+    morphologyEx(fr, fr, MORPH_OPEN, kernel);
   }
-  imwrite("test_code_thomas.png",fr);
   imshow("sub", fr);
   waitKey(0);
+
+
+
+
+  Mat disk2 = imread("morphology/disk-2.png", CV_LOAD_IMAGE_GRAYSCALE);
+  Mat disk10 = imread("morphology/disk10.png", CV_LOAD_IMAGE_GRAYSCALE);
+  Mat open,squelette, dst, color_dst;
+  //2 closing
+  //---------
+  //1 closing disk2
+
+  
+  morphologyEx(fr, fr, MORPH_CLOSE, disk2);
+  //imshow("close1",close1);
+  //waitKey(0);
+
+  //1 closing disk10
+  morphologyEx(fr, fr, MORPH_CLOSE, disk10);
+  //imshow("close2",close2);
+  //waitKey(0);
+
+  //opening
+  //-------
+  morphologyEx(fr, fr, MORPH_OPEN, disk2);
+  morphologyEx(fr, open, MORPH_OPEN, disk10);
+  //imshow("open",open);
+  //waitKey(0);
+  
+  //Skeleton
+  //--------
+  squelette=skeleton(disk2,open);
+  imshow("squelette",squelette);
+  waitKey(0);
+
+  //Canny
+  Canny( squelette, dst, 50, 200, 3 );
+  cvtColor( dst, color_dst, CV_GRAY2BGR );
+
+  //Hough
+  vector<Vec4i> lines;
+  //threshodl élévé : moins de lignes
+  int threshold=60;
+  HoughLinesP( dst, lines, 1, CV_PI/180, threshold, 50, 200 );
+
+
+    //Traitement des lignes sorties par Hough
+    //---------------------------------------
+    //Ajouter le coefficient directeur
+    double coefficients[lines.size()];
+    double label[lines.size()] = {0};
+    for( size_t i = 0; i < lines.size(); i++ )
+    {
+        //x(b)-x(a)
+        double dx=lines[i][2]-lines[i][0];
+        double dy=lines[i][3]-lines[i][1];
+
+        double m=dy/dx;
+
+        //Ajouter dans le tableau
+        coefficients[i]=m;
+    }
+    int lab = 1;
+    for(int i = 0; i < lines.size(); i++){
+      label[i] = lab;
+      for(int j = i+1; j < lines.size(); j++){
+        if((label[j] == 0)&&(abs(coefficients[j]-coefficients[i])<1)){
+          label[j] = label[i];
+        }
+      }
+      lab++;
+    }
+
+    for(int k = 1; k < lab; k++){
+      int R = rand()*255;
+      int G = rand()*255;
+      int B = rand()*255;
+      for( size_t i = 0; i < lines.size(); i++ )
+      {
+        if(label[i] == k){
+          line( image, Point(lines[i][0], lines[i][1]),
+          Point(lines[i][2], lines[i][3]), Scalar(R,G,B), 3, 8 );
+        }
+      }
+    }
+
+
+    namedWindow( "Detected Lines", 1 );
+    imshow( "Detected Lines", image );
+    waitKey(0);
 
     //Threshold
     //Filtering of binarymake

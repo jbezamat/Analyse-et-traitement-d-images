@@ -55,7 +55,6 @@ void process(const char *imsname){
     return;
   }
 
-  cvtColor(image,image, COLOR_BGR2HSV);
   namedWindow(imsname, WINDOW_AUTOSIZE);
   imshow(imsname, image);
 

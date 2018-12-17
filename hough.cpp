@@ -132,13 +132,13 @@ void process(const char *imsname){
         cout<<"Coefficient "<<i<<" = "<<m<<endl;
     }
 
-    double ref=coefficients[0];
-    vector<Vec4i> sameLine;
-    for( size_t i = 1; i < coefficients.size(); i++ ){
-      if(coefficients[i]>ref-0.1 && coefficients[i]<ref+0.1){
+    // double ref=coefficients[0];
+    // vector<Vec4i> sameLine;
+    // for( size_t i = 1; i < coefficients.size(); i++ ){
+    //   if(coefficients[i]>ref-0.1 && coefficients[i]<ref+0.1){
 
-      }
-    }
+    //   }
+    // }
 
 
 
