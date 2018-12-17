@@ -156,56 +156,72 @@ void process(const char *imsname){
         cout << coeficients[i][0] << " " << coeficients[i][1] << endl;
     }
 
-    vector<int[4]> final_lines;
     int lab = 0;
     for(int i = 0; i < lines.size(); i++){
       if(label[i] == 0){
         lab++;
-        final_lines[lab][0] = lines[i][0];
-        final_lines[lab][1] = lines[i][1];
-        final_lines[lab][2] = lines[i][2];
-        final_lines[lab][3] = lines[i][3];
         label[i] = lab;
         for(int j = i+1; j < lines.size(); j++){
           if((label[j] == 0)&&(abs(coeficients[j][0]-coeficients[i][0])<0.1)){//&&(abs(coeficients[j][1]-coeficients[i][1])<100)){
             label[j] = label[i];
-            if(coeficients[i][0] >=0){
-              if((lines[j][0] < final_lines[lab][0])||(lines[j][1] < final_lines[lab][1])){
-                final_lines[lab][0] = lines[j][0];
-                final_lines[lab][1] = lines[j][1];
-              }
-              else if((lines[j][2] < final_lines[lab][0])||(lines[j][3] < final_lines[lab][1])){
-                final_lines[lab][0] = lines[j][2];
-                final_lines[lab][1] = lines[j][3];
-              }
-              else if((lines[j][2] > final_lines[lab][2])||(lines[j][3] > final_lines[lab][3])){
-                final_lines[lab][2] = lines[j][2];
-                final_lines[lab][3] = lines[j][3];
-              }
-              else{
-                
-
-              }
-            }
-            else{
-
-            }
           }
         } 
       }
     }
 
-    
+    int final_lines[lab][4];
+    for(int i = 1; i <= lab; i++){
+      for(int j = 0; j < lines.size(); j++){
+        if(label[j] == lab){
+          if(coeficients[j][0] >= 0){
+            if((lines[j][0] < final_lines[lab][0])||(lines[j][1] < final_lines[lab][1])){
+              final_lines[lab][0] = lines[j][0];
+              final_lines[lab][1] = lines[j][1];
+            }
+            else if((lines[j][2] < final_lines[lab][0])||(lines[j][3] < final_lines[lab][1])){
+              final_lines[lab][0] = lines[j][2];
+              final_lines[lab][1] = lines[j][3];
+            }
+            else if((lines[j][0] > final_lines[lab][2])||(lines[j][1] > final_lines[lab][3])){
+              final_lines[lab][2] = lines[j][0];
+              final_lines[lab][3] = lines[j][1];
+            }
+            else if((lines[j][2] > final_lines[lab][2])||(lines[j][3] > final_lines[lab][3])){
+              final_lines[lab][2] = lines[j][2];
+              final_lines[lab][3] = lines[j][3];
+            }
+          }
+          else{
+            if((lines[j][0] > final_lines[lab][0])||(lines[j][1] < final_lines[lab][1])){
+              final_lines[lab][0] = lines[j][0];
+              final_lines[lab][1] = lines[j][1];
+            }
+            else if((lines[j][2] > final_lines[lab][0])||(lines[j][3] < final_lines[lab][1])){
+              final_lines[lab][0] = lines[j][2];
+              final_lines[lab][1] = lines[j][3];
+            }
+            else if((lines[j][0] < final_lines[lab][2])||(lines[j][1] > final_lines[lab][3])){
+              final_lines[lab][2] = lines[j][0];
+              final_lines[lab][3] = lines[j][1];
+            }
+            else if((lines[j][2] < final_lines[lab][2])||(lines[j][3] > final_lines[lab][3])){
+              final_lines[lab][2] = lines[j][2];
+              final_lines[lab][3] = lines[j][3];
+            }
+          }
+        }
+      }
+    }
 
     for(int k = 1; k <= lab; k++){
       int R = rand()%255;
       int G = rand()%255;
       int B = rand()%255;
-      for( size_t i = 0; i < lines.size(); i++ )
+      for( size_t i = 1; i <= lab; i++ )
       {
         if(label[i] == k){
-          line( image, Point(lines[i][0], lines[i][1]),
-          Point(lines[i][2], lines[i][3]), Scalar(R,G,B), 3, 8 );
+          line( image, Point(final_lines[i][0], final_lines[i][1]),
+          Point(final_lines[i][2], final_lines[i][3]), Scalar(R,G,B), 3, 8 );
         }
       }
     }
