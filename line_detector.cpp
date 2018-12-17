@@ -127,50 +127,49 @@ void process(const char *imsname){
   int threshold=60;
   HoughLinesP( dst, lines, 1, CV_PI/180, threshold, 50, 200 );
 
-
     //Traitement des lignes sorties par Hough
     //---------------------------------------
     //Ajouter le coefficient directeur
-  double coefficients[lines.size()];
-  double label[lines.size()] = {0};
-  for( size_t i = 0; i < lines.size(); i++ )
-  {
-      //x(b)-x(a)
-      double dx=lines[i][2]-lines[i][0];
-      double dy=lines[i][3]-lines[i][1];
+  if(lines.size() != 0){
+    double coefficients[lines.size()];
+    double label[lines.size()] = {0};
 
-      double m=dy/dx;
+    for( size_t i = 0; i < lines.size(); i++ ){
+        //x(b)-x(a)
+        double dx=lines[i][2]-lines[i][0];
+        double dy=lines[i][3]-lines[i][1];
 
-      //Ajouter dans le tableau
-      coefficients[i]=m;
-  }
-  int lab = 0;
-  for(int i = 0; i < lines.size(); i++){
-    if(label[i] == 0){
-      lab++;
-      label[i] = lab;
-      for(int j = i+1; j < lines.size(); j++){
-        if((label[j] == 0)&&(abs(coefficients[j]-coefficients[i])<0.1)){
-          label[j] = label[i];
+        double m=dy/dx;
+
+        //Ajouter dans le tableau
+        coefficients[i]=m;
+    }
+    int lab = 0;
+    for(int i = 0; i < lines.size(); i++){
+      if(label[i] == 0){
+        lab++;
+        label[i] = lab;
+        for(int j = i+1; j < lines.size(); j++){
+          if((label[j] == 0)&&(abs(coefficients[j]-coefficients[i])<0.1)){
+            label[j] = label[i];
+          }
+        } 
+      }   
+    }
+
+    for(int k = 1; k <= lab; k++){
+      int R = rand()%255;
+      int G = rand()%255;
+      int B = rand()%255;
+      for( size_t i = 0; i < lines.size(); i++ )
+      {
+        if(label[i] == k){
+          line( image, Point(lines[i][0], lines[i][1]),
+          Point(lines[i][2], lines[i][3]), Scalar(R,G,B), 3, 8 );
         }
-      } 
-    }   
-  }
-
-  for(int k = 1; k < lab; k++){
-    int R = rand()*255;
-    int G = rand()*255;
-    int B = rand()*255;
-    for( size_t i = 0; i < lines.size(); i++ )
-    {
-      if(label[i] == k){
-        line( image, Point(lines[i][0], lines[i][1]),
-        Point(lines[i][2], lines[i][3]), Scalar(R,G,B), 3, 8 );
       }
     }
   }
-
-
   namedWindow( "Detected Lines", 1 );
   imshow( "Detected Lines", image );
   waitKey(0);
