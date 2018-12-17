@@ -81,12 +81,12 @@ void process(const char *imsname){
   }
 
   //bitwise_not(frame_threshold_terrain, frame_threshold_terrain);
-  // imshow("ap", frame_threshold_terrain);
-  // waitKey('0');
+  imshow("ap", frame_threshold_terrain);
+  waitKey('0');
 
   inRange(frame_HSV, Scalar(low_H, low_S, low_V), Scalar(high_H, high_S, high_V), frame_threshold);
-  // imshow("apr", frame_threshold);
-  // waitKey('0');
+  imshow("apr", frame_threshold);
+  waitKey('0');
 
   Mat fr;
 
@@ -95,8 +95,8 @@ void process(const char *imsname){
   for(int i = 0; i < 2; i++){
     morphologyEx(fr, fr, MORPH_OPEN, kernel);
   }
-  // imshow("sub", fr);
-  // waitKey(0);
+  imshow("sub", fr);
+  waitKey(0);
 
 
 
@@ -105,9 +105,9 @@ void process(const char *imsname){
   Mat disk10 = imread("morphology/disk10.png", CV_LOAD_IMAGE_GRAYSCALE);
   Mat open,squelette, dst, color_dst;
 
-  // morphologyEx(fr, fr, MORPH_CLOSE, disk2);
+  morphologyEx(fr, fr, MORPH_CLOSE, disk2);
   morphologyEx(fr, fr, MORPH_CLOSE, disk10);
-  // morphologyEx(fr, fr, MORPH_OPEN, disk2);
+  morphologyEx(fr, fr, MORPH_OPEN, disk2);
   morphologyEx(fr, open, MORPH_OPEN, disk10);
   // imshow("open",open);
   // waitKey(0);
@@ -115,8 +115,8 @@ void process(const char *imsname){
   //Skeleton
   //--------
   squelette=skeleton(disk2,open);
-  // imshow("squelette",squelette);
-  // waitKey(0);
+  imshow("squelette",squelette);
+  waitKey(0);
 
   //Canny
   // Canny( squelette, dst, 50, 200, 3 );
@@ -125,8 +125,8 @@ void process(const char *imsname){
   //Hough
   vector<Vec4i> lines;
   //threshodl élévé : moins de lignes
-  int threshold=70;
-  HoughLinesP( dst, lines, 1, CV_PI/180, threshold, 50, 100 );
+  int threshold=50;
+  HoughLinesP( squelette, lines, 1, CV_PI/180, threshold, 50, 100 );
 
     //Traitement des lignes sorties par Hough
     //---------------------------------------
@@ -154,16 +154,16 @@ void process(const char *imsname){
         coeficients[i][0] = dy/dx;
         coeficients[i][1] = lines[i][1]-coeficients[i][0]*(lines[i][0]);
 
-        cout << coeficients[i][0] << " " << coeficients[i][1] << endl;
+        //cout << coeficients[i][0] << " " << coeficients[i][1] << endl;
     }
 
     int lab = 0;
-    for(unsigned int i = 0; i < lines.size(); i++){
+    for( int i = 0; i < lines.size(); i++){
       if(label[i] == 0){
         lab++;
         label[i] = lab;
-        for(unsigned int j = i+1; j < lines.size(); j++){
-          if((label[j] == 0)&&(abs(coefficients[j]-coefficients[i])<0.1)){
+        for( int j = i+1; j < lines.size(); j++){
+          if((label[j] == 0)&&(abs(coeficients[j][0]-coeficients[i][0])<0.1)){
             label[j] = label[i];
           }
         } 
@@ -218,11 +218,11 @@ void process(const char *imsname){
       int R = rand()%255;
       int G = rand()%255;
       int B = rand()%255;
-      for( size_t i = 1; i <= lab; i++ )
+      for( size_t i = 0; i <= lines.size(); i++ )
       {
         if(label[i] == k){
-          line( image, Point(final_lines[i][0], final_lines[i][1]),
-          Point(final_lines[i][2], final_lines[i][3]), Scalar(R,G,B), 3, 8 );
+          line( image, Point(lines[i][0], lines[i][1]),
+          Point(lines[i][2], lines[i][3]), Scalar(R,G,B), 3, 8 );
         }
       }
     }
