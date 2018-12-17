@@ -10,7 +10,6 @@ BIN=\
 	line_detector\
 	cursors\
 	line_detecto_test\
-	make-se\
 	hough
 
 .PHONY: all
@@ -59,4 +58,4 @@ clean:
 
 .PHONY: cleanall
 cleanall: clean
-	$(RM) $(BIN) *.o *.pdf
+	$(RM) $(BIN) *.o
