@@ -124,38 +124,78 @@ void process(const char *imsname){
   //Hough
   vector<Vec4i> lines;
   //threshodl élévé : moins de lignes
-  int threshold=60;
-  HoughLinesP( dst, lines, 1, CV_PI/180, threshold, 50, 200 );
+  int threshold=70;
+  HoughLinesP( dst, lines, 1, CV_PI/180, threshold, 50, 100 );
 
     //Traitement des lignes sorties par Hough
     //---------------------------------------
     //Ajouter le coefficient directeur
   if(lines.size() != 0){
-    double coefficients[lines.size()];
+    //double equations[lines.size()][2] = {0,0};
+    double coeficients[lines.size()][2];
     double label[lines.size()] = {0};
 
     for( size_t i = 0; i < lines.size(); i++ ){
-        //x(b)-x(a)
-        double dx=lines[i][2]-lines[i][0];
-        double dy=lines[i][3]-lines[i][1];
+        // Mat x;
+        // Mat A = (Mat_<double>(2,2) << lines[i][0], 1,
+        //                               lines[i][2], 1);
+        // Mat B = (Mat_<double>(2,1) << lines[i][1], lines[i][3]);
 
-        double m=dy/dx;
+        // solve(A, B, x);
 
-        //Ajouter dans le tableau
-        coefficients[i]=m;
+        // //Ajouter dans le tableau
+        // equations[i][0]=x.at<double>(0,0);
+        // equations[i][0]=x.at<double>(1,0);
+        // cout << equations[i][0] << " " << equations[i][1] << endl;
+
+        double dx = lines[i][2] - lines[i][0];
+        double dy = lines[i][3] - lines[i][1];
+        coeficients[i][0] = dy/dx;
+        coeficients[i][1] = lines[i][1]-coeficients[i][0]*(lines[i][0]);
+
+        cout << coeficients[i][0] << " " << coeficients[i][1] << endl;
     }
+
+    vector<int[4]> final_lines;
     int lab = 0;
     for(int i = 0; i < lines.size(); i++){
       if(label[i] == 0){
         lab++;
+        final_lines[lab][0] = lines[i][0];
+        final_lines[lab][1] = lines[i][1];
+        final_lines[lab][2] = lines[i][2];
+        final_lines[lab][3] = lines[i][3];
         label[i] = lab;
         for(int j = i+1; j < lines.size(); j++){
-          if((label[j] == 0)&&(abs(coefficients[j]-coefficients[i])<0.1)){
+          if((label[j] == 0)&&(abs(coeficients[j][0]-coeficients[i][0])<0.1)){//&&(abs(coeficients[j][1]-coeficients[i][1])<100)){
             label[j] = label[i];
+            if(coeficients[i][0] >=0){
+              if((lines[j][0] < final_lines[lab][0])||(lines[j][1] < final_lines[lab][1])){
+                final_lines[lab][0] = lines[j][0];
+                final_lines[lab][1] = lines[j][1];
+              }
+              else if((lines[j][2] < final_lines[lab][0])||(lines[j][3] < final_lines[lab][1])){
+                final_lines[lab][0] = lines[j][2];
+                final_lines[lab][1] = lines[j][3];
+              }
+              else if((lines[j][2] > final_lines[lab][2])||(lines[j][3] > final_lines[lab][3])){
+                final_lines[lab][2] = lines[j][2];
+                final_lines[lab][3] = lines[j][3];
+              }
+              else{
+                
+
+              }
+            }
+            else{
+
+            }
           }
         } 
-      }   
+      }
     }
+
+    
 
     for(int k = 1; k <= lab; k++){
       int R = rand()%255;
@@ -169,6 +209,10 @@ void process(const char *imsname){
         }
       }
     }
+
+
+
+
   }
   namedWindow( "Detected Lines", 1 );
   imshow( "Detected Lines", image );
