@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cstdlib>
 #include <math.h>
+#include <time.h>
 
 #include <opencv2/opencv.hpp>
 
@@ -80,12 +81,12 @@ void process(const char *imsname){
   }
 
   //bitwise_not(frame_threshold_terrain, frame_threshold_terrain);
-  imshow("ap", frame_threshold_terrain);
-  waitKey('0');
+  // imshow("ap", frame_threshold_terrain);
+  // waitKey('0');
 
   inRange(frame_HSV, Scalar(low_H, low_S, low_V), Scalar(high_H, high_S, high_V), frame_threshold);
-  imshow("apr", frame_threshold);
-  waitKey('0');
+  // imshow("apr", frame_threshold);
+  // waitKey('0');
 
   Mat fr;
 
@@ -94,8 +95,8 @@ void process(const char *imsname){
   for(int i = 0; i < 2; i++){
     morphologyEx(fr, fr, MORPH_OPEN, kernel);
   }
-  imshow("sub", fr);
-  waitKey(0);
+  // imshow("sub", fr);
+  // waitKey(0);
 
 
 
@@ -104,21 +105,21 @@ void process(const char *imsname){
   Mat disk10 = imread("morphology/disk10.png", CV_LOAD_IMAGE_GRAYSCALE);
   Mat open,squelette, dst, color_dst;
 
-  morphologyEx(fr, fr, MORPH_CLOSE, disk2);
+  // morphologyEx(fr, fr, MORPH_CLOSE, disk2);
   morphologyEx(fr, fr, MORPH_CLOSE, disk10);
-  morphologyEx(fr, fr, MORPH_OPEN, disk2);
+  // morphologyEx(fr, fr, MORPH_OPEN, disk2);
   morphologyEx(fr, open, MORPH_OPEN, disk10);
-  imshow("open",open);
-  waitKey(0);
+  // imshow("open",open);
+  // waitKey(0);
   
   //Skeleton
   //--------
   squelette=skeleton(disk2,open);
-  imshow("squelette",squelette);
-  waitKey(0);
+  // imshow("squelette",squelette);
+  // waitKey(0);
 
   //Canny
-  Canny( squelette, dst, 50, 200, 3 );
+  // Canny( squelette, dst, 50, 200, 3 );
   //cvtColor( dst, color_dst, CV_GRAY2BGR );
 
   //Hough
@@ -157,12 +158,12 @@ void process(const char *imsname){
     }
 
     int lab = 0;
-    for(int i = 0; i < lines.size(); i++){
+    for(unsigned int i = 0; i < lines.size(); i++){
       if(label[i] == 0){
         lab++;
         label[i] = lab;
-        for(int j = i+1; j < lines.size(); j++){
-          if((label[j] == 0)&&(abs(coeficients[j][0]-coeficients[i][0])<0.1)){//&&(abs(coeficients[j][1]-coeficients[i][1])<100)){
+        for(unsigned int j = i+1; j < lines.size(); j++){
+          if((label[j] == 0)&&(abs(coefficients[j]-coefficients[i])<0.1)){
             label[j] = label[i];
           }
         } 
@@ -245,6 +246,13 @@ int main( int argc, char* argv[] ){
   if(argc != (param+1)){
     usage(argv[0]);
   }
+
+  clock_t t;
+  t = clock();
+
   process(argv[1]);
+
+  t = clock() - t;
+  cout << "Exec time: " << ((float)t) / CLOCKS_PER_SEC << " s" << endl;
   return EXIT_SUCCESS;
 }
