@@ -73,8 +73,9 @@ void process(const char *imsname){
   Mat kernel2 = imread("disk-30.png", CV_LOAD_IMAGE_GRAYSCALE);
   Mat frame_HSV, frame_threshold, frame_threshold_terrain;
 
+  imshow("image", image);
   blur(image, frame_HSV, Size(5,5));
-  imshow("image", frame_HSV);
+  imshow("blurred", frame_HSV);
     // Convert from BGR to HSV colorspace
   //cvtColor(image, frame_HSV, COLOR_BGR2HSV);
 
@@ -91,13 +92,13 @@ void process(const char *imsname){
   //}
 
   //bitwise_not(frame_threshold_terrain, frame_threshold_terrain);
-  //imshow("ap", frame_threshold_terrain);
+  imshow("terrain", frame_threshold_terrain);
  
 
   inRange(frame_HSV, Scalar(low_H, low_S, low_V), Scalar(high_H, high_S, high_V), frame_threshold);
   morphologyEx(frame_threshold, frame_threshold, MORPH_CLOSE, kernel);
 
-  //imshow("apr", frame_threshold);
+  imshow("lines", frame_threshold);
 
 
   Mat fr;
@@ -107,8 +108,7 @@ void process(const char *imsname){
   //for(int i = 0; i < 1; i++){
   morphologyEx(fr, fr, MORPH_CLOSE, kernel2);
   //}
-  imshow("sub", fr);
-  waitKey(0);
+  imshow("subtract", fr);
 
   Mat disk2 = imread("morphology/disk-2.png", CV_LOAD_IMAGE_GRAYSCALE);
   Mat disk10 = imread("morphology/disk10.png", CV_LOAD_IMAGE_GRAYSCALE);
@@ -126,7 +126,6 @@ void process(const char *imsname){
   //--------
   squelette=skeleton(disk2,fr);
   imshow("squelette",squelette);
-  waitKey(0);
 
   //Canny
   // Canny( squelette, dst, 50, 200, 3 );
