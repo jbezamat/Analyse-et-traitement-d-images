@@ -2,14 +2,17 @@
 #include <cstdlib>
 #include <math.h>
 #include <time.h>
-
+#include <limits.h>
 #include <opencv2/opencv.hpp>
 
 using namespace cv;
 using namespace std;
 
-int low_H = 7, low_S = 140, low_V = 65;
-int high_H = 37, high_S = 255, high_V = 255;
+// int low_H = 7, low_S = 140, low_V = 65;
+// int high_H = 37, high_S = 255, high_V = 255;
+int low_H = 0, low_S = 72, low_V = 81;
+int high_H = 41, high_S = 175, high_V = 190; //RGB
+
 
 
 bool isImgBlack(Mat img) {
@@ -56,8 +59,9 @@ Mat skeleton(Mat se, Mat ims){
 }
 
 void process(const char *imsname){
-  Mat image;
+  Mat image, image2;
   image = imread(imsname, CV_LOAD_IMAGE_COLOR);
+  image2 = imread(imsname, CV_LOAD_IMAGE_COLOR);
 
   if (!image.data)
   {
@@ -65,56 +69,62 @@ void process(const char *imsname){
     return;
   }
 
-  Mat kernel = getStructuringElement(MORPH_RECT,Size(2,2));
+  Mat kernel = getStructuringElement(MORPH_RECT,Size(3,3));
   Mat kernel2 = imread("disk-30.png", CV_LOAD_IMAGE_GRAYSCALE);
-
-  blur(image, image, Size(10,10));
-
   Mat frame_HSV, frame_threshold, frame_threshold_terrain;
+
+  blur(image, frame_HSV, Size(5,5));
+  imshow("image", frame_HSV);
     // Convert from BGR to HSV colorspace
-  cvtColor(image, frame_HSV, COLOR_BGR2HSV);
+  //cvtColor(image, frame_HSV, COLOR_BGR2HSV);
 
-  inRange(frame_HSV, Scalar(0, 150, 150), Scalar(255, 255, 255), frame_threshold_terrain);
+  // inRange(frame_HSV, Scalar(0, 150, 150), Scalar(255, 255, 255), frame_threshold_terrain);
+  inRange(frame_HSV, Scalar(0, 64, 167), Scalar(255, 255, 255), frame_threshold_terrain); //RGB
 
-  for(int i = 0; i < 5; i++){
-    morphologyEx(frame_threshold_terrain, frame_threshold_terrain, MORPH_CLOSE, kernel2);
-  }
+
+  //for(int i = 0; i < 1; i++){
+  morphologyEx(frame_threshold_terrain, frame_threshold_terrain, MORPH_CLOSE, kernel2);
+  dilate(frame_threshold_terrain, frame_threshold_terrain, kernel);
+  dilate(frame_threshold_terrain, frame_threshold_terrain, kernel);
+  dilate(frame_threshold_terrain, frame_threshold_terrain, kernel);
+
+  //}
 
   //bitwise_not(frame_threshold_terrain, frame_threshold_terrain);
-  imshow("ap", frame_threshold_terrain);
-  waitKey('0');
+  //imshow("ap", frame_threshold_terrain);
+ 
 
   inRange(frame_HSV, Scalar(low_H, low_S, low_V), Scalar(high_H, high_S, high_V), frame_threshold);
-  imshow("apr", frame_threshold);
-  waitKey('0');
+  morphologyEx(frame_threshold, frame_threshold, MORPH_CLOSE, kernel);
+
+  //imshow("apr", frame_threshold);
+
 
   Mat fr;
 
   subtract(frame_threshold, frame_threshold_terrain, fr);
 
-  for(int i = 0; i < 2; i++){
-    morphologyEx(fr, fr, MORPH_OPEN, kernel);
-  }
+  //for(int i = 0; i < 1; i++){
+  morphologyEx(fr, fr, MORPH_CLOSE, kernel2);
+  //}
   imshow("sub", fr);
   waitKey(0);
 
-
-
-
   Mat disk2 = imread("morphology/disk-2.png", CV_LOAD_IMAGE_GRAYSCALE);
   Mat disk10 = imread("morphology/disk10.png", CV_LOAD_IMAGE_GRAYSCALE);
+
   Mat open,squelette, dst, color_dst;
 
-  morphologyEx(fr, fr, MORPH_CLOSE, disk2);
-  morphologyEx(fr, fr, MORPH_CLOSE, disk10);
+  //morphologyEx(fr, fr, MORPH_CLOSE, disk10);
   morphologyEx(fr, fr, MORPH_OPEN, disk2);
-  morphologyEx(fr, open, MORPH_OPEN, disk10);
+  //morphologyEx(fr, fr, MORPH_OPEN, disk10);
+  //morphologyEx(fr, open, MORPH_CLOSE, disk10);
   // imshow("open",open);
   // waitKey(0);
   
   //Skeleton
   //--------
-  squelette=skeleton(disk2,open);
+  squelette=skeleton(disk2,fr);
   imshow("squelette",squelette);
   waitKey(0);
 
@@ -125,7 +135,7 @@ void process(const char *imsname){
   //Hough
   vector<Vec4i> lines;
   //threshodl élévé : moins de lignes
-  int threshold=50;
+  int threshold=35;
   HoughLinesP( squelette, lines, 1, CV_PI/180, threshold, 50, 100 );
 
     //Traitement des lignes sorties par Hough
@@ -160,11 +170,25 @@ void process(const char *imsname){
     int lab = 0;
     for( int i = 0; i < lines.size(); i++){
       if(label[i] == 0){
-        lab++;
-        label[i] = lab;
+        if((coeficients[i][0] != 0)){
+          lab++;
+          label[i] = lab;
+        }
         for( int j = i+1; j < lines.size(); j++){
-          if((label[j] == 0)&&(abs(coeficients[j][0]-coeficients[i][0])<0.1)){
-            label[j] = label[i];
+          if (abs(coeficients[i][0]) >= 3){
+            if((label[j] == 0)&&(abs(coeficients[j][0]-coeficients[i][0])<3)){
+              label[j] = label[i];
+            }
+          }
+          else if(abs(coeficients[i][0])<=0.2){
+            if((label[j] == 0)&&(abs(coeficients[j][0]-coeficients[i][0])<0.05)){
+              label[j] = label[i];
+            }
+          }
+          else {
+            if((label[j] == 0)&&(abs(coeficients[j][0]-coeficients[i][0])<0.15)){
+              label[j] = label[i];
+            }
           }
         } 
       }
@@ -223,6 +247,7 @@ void process(const char *imsname){
         if(label[i] == k){
           line( image, Point(lines[i][0], lines[i][1]),
           Point(lines[i][2], lines[i][3]), Scalar(R,G,B), 3, 8 );
+          cout << coeficients[i][0] << " et " << label[i] <<endl;
         }
       }
     }
