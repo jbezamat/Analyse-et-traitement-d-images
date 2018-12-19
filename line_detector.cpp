@@ -73,9 +73,9 @@ void process(const char *imsname){
   Mat kernel2 = imread("disk-30.png", CV_LOAD_IMAGE_GRAYSCALE);
   Mat frame_HSV, frame_threshold, frame_threshold_terrain;
 
-  imshow("image", image);
+  //imshow("image", image);
   blur(image, frame_HSV, Size(5,5));
-  imshow("blurred", frame_HSV);
+  //imshow("blurred", frame_HSV);
     // Convert from BGR to HSV colorspace
   //cvtColor(image, frame_HSV, COLOR_BGR2HSV);
 
@@ -91,14 +91,10 @@ void process(const char *imsname){
 
   //}
 
-  //bitwise_not(frame_threshold_terrain, frame_threshold_terrain);
-  imshow("terrain", frame_threshold_terrain);
- 
-
   inRange(frame_HSV, Scalar(low_H, low_S, low_V), Scalar(high_H, high_S, high_V), frame_threshold);
   morphologyEx(frame_threshold, frame_threshold, MORPH_CLOSE, kernel);
 
-  imshow("lines", frame_threshold);
+  //imshow("lines", frame_threshold);
 
 
   Mat fr;
@@ -108,28 +104,24 @@ void process(const char *imsname){
   //for(int i = 0; i < 1; i++){
   morphologyEx(fr, fr, MORPH_CLOSE, kernel2);
   //}
-  imshow("subtract", fr);
+  //imshow("subtract", fr);
 
   Mat disk2 = imread("morphology/disk-2.png", CV_LOAD_IMAGE_GRAYSCALE);
   Mat disk10 = imread("morphology/disk10.png", CV_LOAD_IMAGE_GRAYSCALE);
 
   Mat open,squelette, dst, color_dst;
 
-  //morphologyEx(fr, fr, MORPH_CLOSE, disk10);
   morphologyEx(fr, fr, MORPH_OPEN, disk2);
-  //morphologyEx(fr, fr, MORPH_OPEN, disk10);
-  //morphologyEx(fr, open, MORPH_CLOSE, disk10);
+
   // imshow("open",open);
   // waitKey(0);
   
   //Skeleton
   //--------
   squelette=skeleton(disk2,fr);
-  imshow("squelette",squelette);
+  //imshow("squelette",squelette);
 
-  //Canny
-  // Canny( squelette, dst, 50, 200, 3 );
-  //cvtColor( dst, color_dst, CV_GRAY2BGR );
+
 
   //Hough
   vector<Vec4i> lines;
@@ -141,36 +133,30 @@ void process(const char *imsname){
     //---------------------------------------
     //Ajouter le coefficient directeur
   if(lines.size() != 0){
-    //double equations[lines.size()][2] = {0,0};
     double coeficients[lines.size()][2];
     double label[lines.size()] = {0};
 
     for( size_t i = 0; i < lines.size(); i++ ){
-        // Mat x;
-        // Mat A = (Mat_<double>(2,2) << lines[i][0], 1,
-        //                               lines[i][2], 1);
-        // Mat B = (Mat_<double>(2,1) << lines[i][1], lines[i][3]);
-
-        // solve(A, B, x);
-
-        // //Ajouter dans le tableau
-        // equations[i][0]=x.at<double>(0,0);
-        // equations[i][0]=x.at<double>(1,0);
-        // cout << equations[i][0] << " " << equations[i][1] << endl;
 
         double dx = lines[i][2] - lines[i][0];
         double dy = lines[i][3] - lines[i][1];
-        coeficients[i][0] = dy/dx;
-        coeficients[i][1] = lines[i][1]-coeficients[i][0]*(lines[i][0]);
+        if(dx == 0){
+          coeficients[i][0] = -1000;
+        }
+        else{
+          coeficients[i][0] = dy/dx;
+          coeficients[i][1] = lines[i][1]-coeficients[i][0]*(lines[i][0]);
+        }
+        
 
-        //cout << coeficients[i][0] << " " << coeficients[i][1] << endl;
+        //cout << coeficients[i][0] << endl;
     }
 
 
     int lab = 0;
     for( int i = 0; i < lines.size(); i++){
       if(label[i] == 0){
-        if((coeficients[i][0] != 0)){
+        if((coeficients[i][0] != 0)&&(coeficients[i][0] != -1000)){
           lab++;
           label[i] = lab;
         }
@@ -201,16 +187,24 @@ void process(const char *imsname){
       for(int j = 0; j < lines.size(); j++){
         if(first == true){
           if(label[j] == i){
-            final_lines[i][0] = lines[j][0];
-            final_lines[i][1] = lines[j][1];
-            final_lines[i][2] = lines[j][2];
-            final_lines[i][3] = lines[j][3];
+            if(lines[j][1] < lines[j][3]){
+              final_lines[i][0] = lines[j][0];
+              final_lines[i][1] = lines[j][1];
+              final_lines[i][2] = lines[j][2];
+              final_lines[i][3] = lines[j][3];
+            }
+            else{
+              final_lines[i][0] = lines[j][2];
+              final_lines[i][1] = lines[j][3];
+              final_lines[i][2] = lines[j][0];
+              final_lines[i][3] = lines[j][1];
+            } 
             first = false;
           }
         }
         else{
           if(label[j] == i){
-            if(coeficients[j][0] > 0.05){
+            if(coeficients[j][0] > 0.07){
               if((lines[j][0] < final_lines[i][0])||(lines[j][1] < final_lines[i][1])){
                 final_lines[i][0] = lines[j][0];
                 final_lines[i][1] = lines[j][1];
@@ -228,7 +222,7 @@ void process(const char *imsname){
                 final_lines[i][3] = lines[j][3];
               }
             }
-            else if(coeficients[j][0] < -0.05){
+            else if(coeficients[j][0] < -0.07){
               if((lines[j][0] > final_lines[i][0])||(lines[j][1] < final_lines[i][1])){
                 final_lines[i][0] = lines[j][0];
                 final_lines[i][1] = lines[j][1];
