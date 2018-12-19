@@ -4,6 +4,9 @@
 #include <time.h>
 #include <limits.h>
 #include <opencv2/opencv.hpp>
+#include <string>
+#include <sstream>
+#include <stdio.h>
 
 using namespace cv;
 using namespace std;
@@ -56,6 +59,45 @@ Mat skeleton(Mat se, Mat ims){
   } while(!isImgBlack(opening));
 
   return(imd);
+}
+
+void process_video(char *direct_name)
+{
+  int c = 0; // centaines
+  int d = 0; // dizaines
+  int u = 1; // unités
+  String image_name=string(direct_name)+string("/")+to_string(c)+to_string(d)+to_string(u)+string("-rgb.png");
+  Mat image=imread(image_name);
+  Size S = image.size();
+
+  VideoWriter outputVideo("testvideolol2.avi"  , CV_FOURCC('D', 'I', 'V', 'X'), 30, S, true);  //30 for 30 fps
+
+  if (!outputVideo.isOpened()){
+      cout  << "Could not open the output video for write: "<< endl;
+      return;
+  }
+
+
+  while(image.data){
+    imshow("image",image);
+    waitKey(0);
+
+    // outputVideo << image;
+
+    if(u==9)
+    {
+      u=0;
+      d++;
+    }
+    if(d==9)
+    {
+      d=0;
+      c++;
+    }
+    u++;
+    image_name=string(direct_name)+string("/")+to_string(c)+to_string(d)+to_string(u)+string("-rgb.png");
+    image=imread(image_name);
+  }
 }
 
 void process(const char *imsname){
@@ -132,7 +174,7 @@ void process(const char *imsname){
 
   // imshow("open",open);
   // waitKey(0);
-  
+
   //Skeleton
   //--------
   squelette=skeleton(disk2,fr);
@@ -151,7 +193,7 @@ void process(const char *imsname){
     //Ajouter le coefficient directeur
   if(lines.size() != 0){
     double coeficients[lines.size()][2];
-    double label[lines.size()] = {0};
+    double label[lines.size()];// = {0};
 
     for( size_t i = 0; i < lines.size(); i++ ){
 
@@ -164,7 +206,7 @@ void process(const char *imsname){
           coeficients[i][0] = dy/dx;
           coeficients[i][1] = lines[i][1]-coeficients[i][0]*(lines[i][0]);
         }
-        
+
 
         //cout << coeficients[i][0] << endl;
     }
@@ -193,7 +235,7 @@ void process(const char *imsname){
               label[j] = label[i];
             }
           }
-        } 
+        }
       }
     }
     int final_lines[lab][4];
@@ -215,7 +257,7 @@ void process(const char *imsname){
               final_lines[i][1] = lines[j][3];
               final_lines[i][2] = lines[j][0];
               final_lines[i][3] = lines[j][1];
-            } 
+            }
             first = false;
           }
         }
@@ -325,7 +367,7 @@ int main( int argc, char* argv[] ){
   clock_t t;
   t = clock();
 
-  process(argv[1]);
+  process_video(argv[1]);
 
   t = clock() - t;
   cout << "Exec time: " << ((float)t) / CLOCKS_PER_SEC << " s" << endl;
