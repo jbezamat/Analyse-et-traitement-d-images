@@ -1,5 +1,5 @@
 CPPFLAGS=-I/opt/opencv/include
-CXXFLAGS=-Wall -Wextra
+CXXFLAGS=-Wall -Wextra -std=c++11
 LDFLAGS=-Wl,-R/opt/opencv/lib -L/opt/opencv/lib
 LDLIBS=\
 	-lopencv_core\
