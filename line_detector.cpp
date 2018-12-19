@@ -13,7 +13,7 @@ using namespace std;
 
 // int low_H = 7, low_S = 140, low_V = 65;
 // int high_H = 37, high_S = 255, high_V = 255;
-int low_H = 0, low_S = 70, low_V = 85;
+int low_H = 0, low_S = 70, low_V = 92;
 int high_H = 255, high_S = 255, high_V = 255; //RGB
 
 
@@ -115,7 +115,7 @@ void process(const char *imsname){
   Mat kernel2 = imread("morphology/disk-30.png", CV_LOAD_IMAGE_GRAYSCALE);
   Mat kernel3 = getStructuringElement(MORPH_RECT,Size(5,5));
   Mat kernel4 = getStructuringElement(MORPH_RECT,Size(8,8));
-  Mat frame_HSV, frame_threshold, frame_threshold_terrain;
+  Mat frame_HSV, frame_threshold, frame_threshold_terrain, frame_threshold_terrain_2, HSV;
 
   //imshow("image", image);
   Mat BGR[3];
@@ -127,40 +127,41 @@ void process(const char *imsname){
 
   //blur(image, frame_HSV, Size(5,5));
   // Convert from BGR to HSV colorspace
-  //cvtColor(image, frame_HSV, COLOR_BGR2HSV);
+  cvtColor(image, HSV, COLOR_BGR2HSV);
 
   // inRange(frame_HSV, Scalar(0, 150, 150), Scalar(255, 255, 255), frame_threshold_terrain);
   inRange(image, Scalar(0, 64, 170), Scalar(255, 255, 255), frame_threshold_terrain); //RGB
-
 
   //for(int i = 0; i < 1; i++){
   //imshow("lines", frame_threshold_terrain);
   morphologyEx(frame_threshold_terrain, frame_threshold_terrain, MORPH_OPEN, kernel3);
   morphologyEx(frame_threshold_terrain, frame_threshold_terrain, MORPH_CLOSE, kernel2);
-  //imshow("terrain_bin", frame_threshold_terrain);
-
   dilate(frame_threshold_terrain, frame_threshold_terrain, kernel3);
-  dilate(frame_threshold_terrain, frame_threshold_terrain, kernel3);  
-  dilate(frame_threshold_terrain, frame_threshold_terrain, kernel);  
+  dilate(frame_threshold_terrain, frame_threshold_terrain, kernel4);  
+  dilate(frame_threshold_terrain, frame_threshold_terrain, kernel4);  
+  imshow("field_1", frame_threshold_terrain);
 
-  //dilate(frame_threshold_terrain, frame_threshold_terrain, kernel3);
-  //dilate(frame_threshold_terrain, frame_threshold_terrain, kernel);
-  imshow("terrain_bin", frame_threshold_terrain);
- 
+  inRange(HSV, Scalar(20, 0, 0), Scalar(100, 255, 255), frame_threshold_terrain_2); //RGB
+  //morphologyEx(frame_threshold_terrain_2, frame_threshold_terrain_2, MORPH_OPEN, kernel3);
+  erode(frame_threshold_terrain_2, frame_threshold_terrain_2, kernel3);
+  bitwise_not(frame_threshold_terrain_2, frame_threshold_terrain_2);
+  imshow("field_2", frame_threshold_terrain_2);
   //}
 
   inRange(frame_HSV, Scalar(low_H, low_S, low_V), Scalar(high_H, high_S, high_V), frame_threshold);
-  morphologyEx(frame_threshold, frame_threshold, MORPH_OPEN, kernel3);
+  //morphologyEx(frame_threshold, frame_threshold, MORPH_OPEN, kernel3);
   morphologyEx(frame_threshold, frame_threshold, MORPH_CLOSE, kernel4);
-  imshow("lines erode_bin", frame_threshold);
-
+  morphologyEx(frame_threshold, frame_threshold, MORPH_CLOSE, kernel4);
+  //morphologyEx(frame_threshold, frame_threshold, MORPH_CLOSE, kernel4);
+  imshow("lines", frame_threshold);
 
   Mat fr;
 
   subtract(frame_threshold, frame_threshold_terrain, fr);
-
+  subtract(fr, frame_threshold_terrain_2, fr);
   //for(int i = 0; i < 1; i++){
-  morphologyEx(fr, fr, MORPH_CLOSE, kernel);
+  //morphologyEx(fr, fr, MORPH_CLOSE, kernel3);
+  dilate(fr,fr, kernel3);
   imshow("subtract", fr);
   //}
 
@@ -184,8 +185,8 @@ void process(const char *imsname){
   //Hough
   vector<Vec4i> lines;
   //threshodl élévé : moins de lignes
-  int threshold=55;
-  HoughLinesP( squelette, lines, 1, CV_PI/180, threshold, 50, 100 );
+  int threshold=40;
+  HoughLinesP( squelette, lines, 1, CV_PI/180, threshold, 10, 200 );
 
     //Traitement des lignes sorties par Hough
     //---------------------------------------
@@ -219,18 +220,19 @@ void process(const char *imsname){
           label[i] = lab;
         }
         for( int j = i+1; j < lines.size(); j++){
-          if ((abs(coeficients[i][0]) >= 2)){
-            if((label[j] == 0)&&(abs(coeficients[j][0]-coeficients[i][0])<2)&&(abs(coeficients[i][1] - coeficients[j][1])/sqrt(pow(coeficients[i][0],2)+1) < 20)){
+          if ((abs(coeficients[i][0]) >= 1.8)){
+            if((label[j] == 0)&&(abs(coeficients[j][0]-coeficients[i][0])<2)){
+            
               label[j] = label[i];
             }
           }
           else if((abs(coeficients[i][0])<=0.2)){
-            if((label[j] == 0)&&(abs(coeficients[j][0]-coeficients[i][0])<0.05)&&(abs(coeficients[i][1] - coeficients[j][1])/sqrt(pow(coeficients[i][0],2)+1) < 20)){
+            if((label[j] == 0)&&(abs(coeficients[j][0]-coeficients[i][0])<0.05)){
               label[j] = label[i];
             }
           }
           else {
-            if((label[j] == 0)&&(abs(coeficients[j][0]-coeficients[i][0])<0.15)&&(abs(coeficients[i][1] - coeficients[j][1])/sqrt(pow(coeficients[i][0],2)+1) < 20)){
+            if((label[j] == 0)&&(abs(coeficients[j][0]-coeficients[i][0])<0.15)){
               label[j] = label[i];
             }
           }

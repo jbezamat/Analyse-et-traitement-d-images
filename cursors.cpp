@@ -68,16 +68,21 @@ void process(const char *imsname){
   createTrackbar("Low V", window_detection_name, &low_V, max_value, on_low_V_thresh_trackbar);
   createTrackbar("High V", window_detection_name, &high_V, max_value, on_high_V_thresh_trackbar);
   Mat frame, frame_HSV, frame_threshold, temp;
+  Mat BGR[3];
+  Mat kernel3 = getStructuringElement(MORPH_RECT,Size(5,5));
   while (true) {
       if(image.empty())
       {
           break;
       }
-      // Convert from BGR to HSV colorspace
-      //cvtColor(image, frame_HSV, COLOR_BGR2HSV);
-      blur(image, temp, Size(5,5));
+
+      split(image, BGR);
+      dilate(BGR[0], BGR[0], kernel3);
+      dilate(BGR[1], BGR[1], kernel3);
+      dilate(BGR[2], BGR[2], kernel3);
+      merge(BGR, 3,frame_HSV);
       // Detect the object based on HSV Range Values
-      inRange(temp, Scalar(low_H, low_S, low_V), Scalar(high_H, high_S, high_V), frame_threshold);
+      inRange(image, Scalar(low_H, low_S, low_V), Scalar(high_H, high_S, high_V), frame_threshold);
       // Show the frames
       imshow(window_capture_name, image);
       imshow(window_detection_name, frame_threshold);
