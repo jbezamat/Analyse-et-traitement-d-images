@@ -61,58 +61,12 @@ Mat skeleton(Mat se, Mat ims){
   return(imd);
 }
 
-void process_video(char *direct_name)
-{
-  int c = 0; // centaines
-  int d = 0; // dizaines
-  int u = 1; // unités
-  String image_name=string(direct_name)+string("/")+to_string(c)+to_string(d)+to_string(u)+string("-rgb.png");
-  Mat image=imread(image_name);
-  Size S = image.size();
+Mat process(Mat image){
 
-  VideoWriter outputVideo("testvideolol2.avi"  , CV_FOURCC('D', 'I', 'V', 'X'), 30, S, true);  //30 for 30 fps
-
-  if (!outputVideo.isOpened()){
-      cout  << "Could not open the output video for write: "<< endl;
-      return;
-  }
-
-
-  while(image.data){
-    imshow("image",image);
-    waitKey(0);
-
-    // outputVideo << image;
-
-    if(u==9)
-    {
-      u=0;
-      d++;
-    }
-    if(d==9)
-    {
-      d=0;
-      c++;
-    }
-    u++;
-    image_name=string(direct_name)+string("/")+to_string(c)+to_string(d)+to_string(u)+string("-rgb.png");
-    image=imread(image_name);
-  }
-}
-
-void process(const char *imsname){
-  Mat image, image2;
-  image = imread(imsname, CV_LOAD_IMAGE_COLOR);
-  image2 = imread(imsname, CV_LOAD_IMAGE_COLOR);
-
-  if (!image.data)
-  {
-    cout << "Could not open or find the image" << '\n';
-    return;
-  }
+  Mat image2 = image.clone();
 
   Mat kernel = getStructuringElement(MORPH_RECT,Size(3,3));
-  Mat kernel2 = imread("disk-30.png", CV_LOAD_IMAGE_GRAYSCALE);
+  Mat kernel2 = imread("morphology/disk-30.png", CV_LOAD_IMAGE_GRAYSCALE);
   Mat frame_HSV, frame_threshold, frame_threshold_terrain;
 
   //imshow("image", image);
@@ -326,14 +280,65 @@ void process(const char *imsname){
       Point(final_lines[k][2], final_lines[k][3]), Scalar(R,G,B), 3, 8 );
       //cout << k << endl;
     }
-
-
-
-
   }
-  namedWindow( "Detected Lines", 1 );
-  imshow( "Detected Lines", image );
+  // namedWindow( "Detected Lines", 1 );
+  // imshow( "Detected Lines", image );
   waitKey(0);
+
+  return image;
+}
+
+
+void process(const char *imsname){
+  Mat image;
+  image = imread(imsname, CV_LOAD_IMAGE_COLOR);
+
+  if (!image.data)
+  {
+    cout << "Could not open or find the image" << '\n';
+    return;
+  }
+  process(image);
+}
+
+void process_video(char *direct_name)
+{
+  int c = 0; // centaines
+  int d = 0; // dizaines
+  int u = 1; // unités
+  String image_name=string(direct_name)+string("/")+to_string(c)+to_string(d)+to_string(u)+string("-rgb.png");
+  Mat image=imread(image_name);
+  image = process(image);
+  Size S = image.size();
+
+  VideoWriter outputVideo("testvideolol2.avi"  , CV_FOURCC('D', 'I', 'V', 'X'), 15, S, true);  //30 for 30 fps
+
+  if (!outputVideo.isOpened()){
+      cout  << "Could not open the output video for write: "<< endl;
+      return;
+  }
+
+  while(image.data){
+    imshow("image",image);
+    waitKey(0);
+
+    outputVideo << image;
+
+    if(u==9)
+    {
+      u=0;
+      d++;
+    }
+    if(d==9)
+    {
+      d=0;
+      c++;
+    }
+    u++;
+    image_name=string(direct_name)+string("/")+to_string(c)+to_string(d)+to_string(u)+string("-rgb.png");
+    image= imread(image_name);
+    image = process(image);
+  }
 }
 
 void usage (const char *s){
