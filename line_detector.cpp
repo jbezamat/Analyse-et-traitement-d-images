@@ -62,7 +62,6 @@ Mat skeleton(Mat se, Mat ims){
 }
 
 Mat process(Mat image){
-
   Mat temp;
   Mat image2 = image.clone();
 
@@ -70,17 +69,18 @@ Mat process(Mat image){
   Mat kernel2 = imread("morphology/disk-30.png", CV_LOAD_IMAGE_GRAYSCALE);
   Mat kernel3 = getStructuringElement(MORPH_RECT,Size(5,5));
   Mat kernel4 = getStructuringElement(MORPH_RECT,Size(8,8));
-
   Mat frame_HSV, frame_threshold, frame_threshold_terrain;
 
-  //imshow("image", image);
+  //// imshow("image", image);
+  // BGR[0]=Mat::zeros(image.size(),CV_32F);
+  // BGR[1]=Mat::zeros(image.size(),CV_32F);
+  // BGR[2]=Mat::zeros(image.size(),CV_32F);
   Mat BGR[3];
   split(image, BGR);
   dilate(BGR[0], BGR[0], kernel3);
   dilate(BGR[1], BGR[1], kernel3);
   dilate(BGR[2], BGR[2], kernel3);
   merge(BGR, 3,frame_HSV);
-
   //blur(image, frame_HSV, Size(5,5));
   // Convert from BGR to HSV colorspace
   //cvtColor(image, frame_HSV, COLOR_BGR2HSV);
@@ -88,28 +88,25 @@ Mat process(Mat image){
   // inRange(frame_HSV, Scalar(0, 150, 150), Scalar(255, 255, 255), frame_threshold_terrain);
   inRange(image, Scalar(0, 64, 170), Scalar(255, 255, 255), frame_threshold_terrain); //RGB
 
-
   //for(int i = 0; i < 1; i++){
-  //imshow("lines", frame_threshold_terrain);
+  //// imshow("lines", frame_threshold_terrain);
   morphologyEx(frame_threshold_terrain, frame_threshold_terrain, MORPH_OPEN, kernel3);
   morphologyEx(frame_threshold_terrain, frame_threshold_terrain, MORPH_CLOSE, kernel2);
-  //imshow("terrain_bin", frame_threshold_terrain);
+  //// imshow("terrain_bin", frame_threshold_terrain);
 
   dilate(frame_threshold_terrain, frame_threshold_terrain, kernel3);
   dilate(frame_threshold_terrain, frame_threshold_terrain, kernel3);
   dilate(frame_threshold_terrain, frame_threshold_terrain, kernel);
-
   //dilate(frame_threshold_terrain, frame_threshold_terrain, kernel3);
   //dilate(frame_threshold_terrain, frame_threshold_terrain, kernel);
-  imshow("terrain_bin", frame_threshold_terrain);
+  // imshow("terrain_bin", frame_threshold_terrain);
 
   //}
 
   inRange(frame_HSV, Scalar(low_H, low_S, low_V), Scalar(high_H, high_S, high_V), frame_threshold);
   morphologyEx(frame_threshold, frame_threshold, MORPH_OPEN, kernel3);
   morphologyEx(frame_threshold, frame_threshold, MORPH_CLOSE, kernel4);
-  imshow("lines erode_bin", frame_threshold);
-
+  // imshow("lines erode_bin", frame_threshold);
 
   Mat fr;
 
@@ -117,7 +114,7 @@ Mat process(Mat image){
 
   //for(int i = 0; i < 1; i++){
   morphologyEx(fr, fr, MORPH_CLOSE, kernel);
-  imshow("subtract", fr);
+  // imshow("subtract", fr);
   //}
 
   Mat disk2 = imread("morphology/disk-2.png", CV_LOAD_IMAGE_GRAYSCALE);
@@ -127,13 +124,13 @@ Mat process(Mat image){
 
   morphologyEx(fr, fr, MORPH_OPEN, disk2);
 
-  // imshow("open",open);
+  // // imshow("open",open);
   // waitKey(0);
 
   //Skeleton
   //--------
   squelette=skeleton(disk2,fr);
-  imshow("squelette",squelette);
+  // imshow("squelette",squelette);
 
 
 
@@ -148,7 +145,7 @@ Mat process(Mat image){
     //Ajouter le coefficient directeur
   if(lines.size() != 0){
     double coeficients[lines.size()][2];
-    double label[lines.size()] = {0};
+    double label[lines.size()]; // = {0};
 
     for( size_t i = 0; i < lines.size(); i++ ){
 
@@ -300,9 +297,8 @@ Mat process(Mat image){
     }
   }
   // namedWindow( "Detected Lines", 1 );
-  // imshow( "Detected Lines", image );
+  // // imshow( "Detected Lines", image );
   waitKey(0);
-
   return image;
 }
 
@@ -326,7 +322,7 @@ void process_video(char *direct_name)
   int u = 1; // unités
   String image_name=string(direct_name)+string("/")+to_string(c)+to_string(d)+to_string(u)+string("-rgb.png");
   Mat image=imread(image_name);
-  image = process(image);
+//  image = process(image);
   Size S = image.size();
 
   VideoWriter outputVideo("testvideolol2.avi"  , CV_FOURCC('D', 'I', 'V', 'X'), 15, S, true);  //30 for 30 fps
@@ -336,7 +332,8 @@ void process_video(char *direct_name)
       return;
   }
 
-  while(image.data){
+  do{
+    image = process(image);
     imshow("image",image);
     waitKey(0);
 
@@ -355,8 +352,8 @@ void process_video(char *direct_name)
     u++;
     image_name=string(direct_name)+string("/")+to_string(c)+to_string(d)+to_string(u)+string("-rgb.png");
     image= imread(image_name);
-    image = process(image);
-  }
+
+  }while(image.data);
 }
 
 void usage (const char *s){
@@ -372,9 +369,18 @@ int main( int argc, char* argv[] ){
 
   clock_t t;
   t = clock();
+  size_t len = strlen(argv[1]);
 
-  //process_video(argv[1]);
-  process(argv[1]);
+  char* c = argv[1];
+  std::cout << c[len-1] << '\n';
+  if(c == "/"){
+      std::cerr << "ok" << '\n';
+      process_video(argv[1]);
+  }
+  else{
+    std::cout << "pas ok" << '\n';
+    process(argv[1]);
+  }
   t = clock() - t;
   cout << "Exec time: " << ((float)t) / CLOCKS_PER_SEC << " s" << endl;
   return EXIT_SUCCESS;
