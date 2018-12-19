@@ -58,6 +58,16 @@ Mat skeleton(Mat se, Mat ims){
   return(imd);
 }
 
+void process_video(char *direct_name)
+{
+  // const char *toto="001-rgb.png";
+  String toto = strcat(direct_name,"/001-rgb.png");
+  std::cout << "toto : " << toto << '\n';
+  Mat image=imread(toto);
+  imshow("image",image);
+  waitKey(0);
+}
+
 void process(const char *imsname){
   Mat image, image2;
   image = imread(imsname, CV_LOAD_IMAGE_COLOR);
@@ -93,7 +103,7 @@ void process(const char *imsname){
 
   //bitwise_not(frame_threshold_terrain, frame_threshold_terrain);
   imshow("terrain", frame_threshold_terrain);
- 
+
 
   inRange(frame_HSV, Scalar(low_H, low_S, low_V), Scalar(high_H, high_S, high_V), frame_threshold);
   morphologyEx(frame_threshold, frame_threshold, MORPH_CLOSE, kernel);
@@ -121,7 +131,7 @@ void process(const char *imsname){
   //morphologyEx(fr, open, MORPH_CLOSE, disk10);
   // imshow("open",open);
   // waitKey(0);
-  
+
   //Skeleton
   //--------
   squelette=skeleton(disk2,fr);
@@ -143,7 +153,7 @@ void process(const char *imsname){
   if(lines.size() != 0){
     //double equations[lines.size()][2] = {0,0};
     double coeficients[lines.size()][2];
-    double label[lines.size()] = {0};
+    double label[lines.size()];// = {0};
 
     for( size_t i = 0; i < lines.size(); i++ ){
         // Mat x;
@@ -190,7 +200,7 @@ void process(const char *imsname){
               label[j] = label[i];
             }
           }
-        } 
+        }
       }
     }
     int final_lines[lab][4];
@@ -314,7 +324,7 @@ int main( int argc, char* argv[] ){
   clock_t t;
   t = clock();
 
-  process(argv[1]);
+  process_video(argv[1]);
 
   t = clock() - t;
   cout << "Exec time: " << ((float)t) / CLOCKS_PER_SEC << " s" << endl;
