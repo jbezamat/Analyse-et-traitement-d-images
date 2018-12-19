@@ -112,7 +112,7 @@ void process(const char *imsname){
   }
 
   Mat kernel = getStructuringElement(MORPH_RECT,Size(3,3));
-  Mat kernel2 = imread("disk-30.png", CV_LOAD_IMAGE_GRAYSCALE);
+  Mat kernel2 = imread("morphology/disk-30.png", CV_LOAD_IMAGE_GRAYSCALE);
   Mat kernel3 = getStructuringElement(MORPH_RECT,Size(5,5));
   Mat kernel4 = getStructuringElement(MORPH_RECT,Size(8,8));
   Mat frame_HSV, frame_threshold, frame_threshold_terrain;
@@ -162,7 +162,6 @@ void process(const char *imsname){
   //for(int i = 0; i < 1; i++){
   morphologyEx(fr, fr, MORPH_CLOSE, kernel);
   imshow("subtract", fr);
-  waitKey(0);
   //}
 
   Mat disk2 = imread("morphology/disk-2.png", CV_LOAD_IMAGE_GRAYSCALE);
@@ -186,14 +185,14 @@ void process(const char *imsname){
   vector<Vec4i> lines;
   //threshodl élévé : moins de lignes
   int threshold=55;
-  HoughLinesP( squelette, lines, 1, CV_PI/180, threshold, 10, 100 );
+  HoughLinesP( squelette, lines, 1, CV_PI/180, threshold, 50, 100 );
 
     //Traitement des lignes sorties par Hough
     //---------------------------------------
     //Ajouter le coefficient directeur
   if(lines.size() != 0){
     double coeficients[lines.size()][2];
-    double label[lines.size()];// = {0};
+    double label[lines.size()] = {0};
 
     for( size_t i = 0; i < lines.size(); i++ ){
 
@@ -367,8 +366,8 @@ int main( int argc, char* argv[] ){
   clock_t t;
   t = clock();
 
-  process_video(argv[1]);
-
+  //process_video(argv[1]);
+  process(argv[1]);
   t = clock() - t;
   cout << "Exec time: " << ((float)t) / CLOCKS_PER_SEC << " s" << endl;
   return EXIT_SUCCESS;
