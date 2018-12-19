@@ -4,6 +4,9 @@
 #include <time.h>
 #include <limits.h>
 #include <opencv2/opencv.hpp>
+#include <string>
+#include <sstream>
+#include <stdio.h>
 
 using namespace cv;
 using namespace std;
@@ -60,12 +63,41 @@ Mat skeleton(Mat se, Mat ims){
 
 void process_video(char *direct_name)
 {
-  // const char *toto="001-rgb.png";
-  String toto = strcat(direct_name,"/001-rgb.png");
-  std::cout << "toto : " << toto << '\n';
-  Mat image=imread(toto);
-  imshow("image",image);
-  waitKey(0);
+  int c = 0; // centaines
+  int d = 0; // dizaines
+  int u = 1; // unités
+  String image_name=string(direct_name)+string("/")+to_string(c)+to_string(d)+to_string(u)+string("-rgb.png");
+  Mat image=imread(image_name);
+  Size S = image.size();
+
+  VideoWriter outputVideo("testvideolol2.avi"  , CV_FOURCC('D', 'I', 'V', 'X'), 30, S, true);  //30 for 30 fps
+
+  if (!outputVideo.isOpened()){
+      cout  << "Could not open the output video for write: "<< endl;
+      return;
+  }
+
+
+  while(image.data){
+    imshow("image",image);
+    waitKey(0);
+
+    // outputVideo << image;
+
+    if(u==9)
+    {
+      u=0;
+      d++;
+    }
+    if(d==9)
+    {
+      d=0;
+      c++;
+    }
+    u++;
+    image_name=string(direct_name)+string("/")+to_string(c)+to_string(d)+to_string(u)+string("-rgb.png");
+    image=imread(image_name);
+  }
 }
 
 void process(const char *imsname){
@@ -101,13 +133,6 @@ void process(const char *imsname){
 
   //}
 
-<<<<<<< HEAD
-  //bitwise_not(frame_threshold_terrain, frame_threshold_terrain);
-  imshow("terrain", frame_threshold_terrain);
-
-
-=======
->>>>>>> 010b09272ce82bac18e8cf93c95d1d5786c7e31a
   inRange(frame_HSV, Scalar(low_H, low_S, low_V), Scalar(high_H, high_S, high_V), frame_threshold);
   morphologyEx(frame_threshold, frame_threshold, MORPH_CLOSE, kernel);
 
@@ -164,7 +189,7 @@ void process(const char *imsname){
           coeficients[i][0] = dy/dx;
           coeficients[i][1] = lines[i][1]-coeficients[i][0]*(lines[i][0]);
         }
-        
+
 
         //cout << coeficients[i][0] << endl;
     }
@@ -215,7 +240,7 @@ void process(const char *imsname){
               final_lines[i][1] = lines[j][3];
               final_lines[i][2] = lines[j][0];
               final_lines[i][3] = lines[j][1];
-            } 
+            }
             first = false;
           }
         }
