@@ -11,8 +11,7 @@
 using namespace cv;
 using namespace std;
 
-// int low_H = 7, low_S = 140, low_V = 65;
-// int high_H = 37, high_S = 255, high_V = 255;
+
 int low_H = 0, low_S = 70, low_V = 85;
 int high_H = 255, high_S = 255, high_V = 255; //RGB
 
@@ -83,15 +82,10 @@ Mat process(Mat image){
   dilate(BGR[1], BGR[1], kernel3);
   dilate(BGR[2], BGR[2], kernel3);
   merge(BGR, 3,frame_HSV);
-  //blur(image, frame_HSV, Size(5,5));
-  // Convert from BGR to HSV colorspace
-  //cvtColor(image, frame_HSV, COLOR_BGR2HSV);
-
-  // inRange(frame_HSV, Scalar(0, 150, 150), Scalar(255, 255, 255), frame_threshold_terrain);
+  
   //----RGB----
   inRange(image, Scalar(0, 64, 170), Scalar(255, 255, 255), frame_threshold_terrain);
 
-  //for(int i = 0; i < 1; i++){
   //// imshow("lines", frame_threshold_terrain);
   morphologyEx(frame_threshold_terrain, frame_threshold_terrain, MORPH_OPEN, kernel3);
   morphologyEx(frame_threshold_terrain, frame_threshold_terrain, MORPH_CLOSE, kernel2);
@@ -100,11 +94,8 @@ Mat process(Mat image){
   dilate(frame_threshold_terrain, frame_threshold_terrain, kernel3);
   dilate(frame_threshold_terrain, frame_threshold_terrain, kernel3);
   dilate(frame_threshold_terrain, frame_threshold_terrain, kernel);
-  //dilate(frame_threshold_terrain, frame_threshold_terrain, kernel3);
-  //dilate(frame_threshold_terrain, frame_threshold_terrain, kernel);
-  //imshow("terrain_bin", frame_threshold_terrain);
 
-  //}
+  //imshow("terrain_bin", frame_threshold_terrain);
 
   inRange(frame_HSV, Scalar(low_H, low_S, low_V), Scalar(high_H, high_S, high_V), frame_threshold);
   morphologyEx(frame_threshold, frame_threshold, MORPH_OPEN, kernel3);
@@ -115,10 +106,8 @@ Mat process(Mat image){
   //----Extraction du terrain----
   subtract(frame_threshold, frame_threshold_terrain, fr);
 
-  //for(int i = 0; i < 1; i++){
   morphologyEx(fr, fr, MORPH_CLOSE, kernel);
   // imshow("subtract", fr);
-  //}
 
   morphologyEx(fr, fr, MORPH_OPEN, disk2);
 
@@ -152,14 +141,11 @@ Mat process(Mat image){
           coeficients[i][0] = dy/dx;
           coeficients[i][1] = lines[i][1]-coeficients[i][0]*(lines[i][0]);
         }
-
-
-        //cout << coeficients[i][0] << endl;
     }
 
-
+    //Determination des extrémités de la ligne finale
     int lab = 0;
-    for( int i = 0; i < lines.size(); i++){
+    for(int i = 0; i < lines.size(); i++){
       if(label[i] == 0){
         if((coeficients[i][0] != 0)&&(coeficients[i][0] != -1000)){
           lab++;
@@ -268,19 +254,7 @@ Mat process(Mat image){
       }
     }
 
-    // for(int k = 1; k <= lab; k++){
-    //   int R = rand()%255;
-    //   int G = rand()%255;
-    //   int B = rand()%255;
-    //   for( size_t i = 1; i <= lines.size(); i++ )
-    //   {
-    //     if(label[i] == k){
-    //       line( image, Point(lines[i][0], lines[i][1]),
-    //       Point(lines[i][2], lines[i][3]), Scalar(R,G,B), 3, 8 );
-    //       cout << coeficients[i][0] << " et " << label[i] << endl;
-    //     }
-    //   }
-    // }
+  
     for(int k = 1; k <= lab; k++){
       int R = rand()%255;
       int G = rand()%255;
@@ -316,10 +290,11 @@ void process_video(char *direct_name)
   int u = 1; // unités
   String image_name=string(direct_name)+string("/")+to_string(c)+to_string(d)+to_string(u)+string("-rgb.png");
   Mat image=imread(image_name);
-//  image = process(image);
+
   Size S = image.size();
 
-  VideoWriter outputVideo("testvideolol2.avi"  , CV_FOURCC('D', 'I', 'V', 'X'), 15, S, true);  //30 for 30 fps
+  String video_name=string(direct_name)+string(".avi");
+  VideoWriter outputVideo(video_name , CV_FOURCC('D', 'I', 'V', 'X'), 15, S, true);  //30 for 30 fps
 
   if (!outputVideo.isOpened()){
       cout  << "Could not open the output video for write: "<< endl;
@@ -328,7 +303,7 @@ void process_video(char *direct_name)
 
   do{
     image = process(image);
-    imshow("image",image);
+    // imshow("image",image);
     waitKey(0);
 
     outputVideo << image;
@@ -351,11 +326,12 @@ void process_video(char *direct_name)
 }
 
 void usage (const char *s){
-  std::cerr<<"Usage: "<<s<<" imsname\n"<<std::endl;
+  std::cerr<<"Usage for image: "<<s<<" 0 image_name\n"<<std::endl;
+  std::cerr<<"Usage for video: "<<s<<" 1 directory_name\n"<<std::endl;
   exit(EXIT_FAILURE);
 }
 
-#define param 1
+#define param 2
 int main( int argc, char* argv[] ){
   if(argc != (param+1)){
     usage(argv[0]);
@@ -363,19 +339,16 @@ int main( int argc, char* argv[] ){
 
   clock_t t;
   t = clock();
-  // size_t len = strlen(argv[1]);
 
-  // char* c = argv[1];
-  // std::cout << c[len-1] << '\n';
-  process_video(argv[1]);
-  // if(c == "/"){
-  //     std::cerr << "ok" << '\n';
-  //     process_video(argv[1]);
-  // }
-  // else{
-  //   std::cout << "pas ok" << '\n';
-  //   process(argv[1]);
-  // }
+  if(atoi(argv[1]) == 0){
+    process(argv[2]);
+  }
+  else if(atoi(argv[1]) == 1){
+    process_video(argv[2]);
+  }
+  else{
+    usage(argv[0]);
+  }
   t = clock() - t;
   cout << "Exec time: " << ((float)t) / CLOCKS_PER_SEC << " s" << endl;
   return EXIT_SUCCESS;
