@@ -101,9 +101,22 @@ void process_video(char *direct_name)
 }
 
 void process(const char *imsname){
-  Mat image, image2, temp;
+  //Elements de traitement
+  Mat kernel = getStructuringElement(MORPH_RECT,Size(3,3));
+  Mat kernel2 = imread("morphology/disk-30.png", CV_LOAD_IMAGE_GRAYSCALE);
+  Mat kernel3 = getStructuringElement(MORPH_RECT,Size(5,5));
+  Mat kernel4 = getStructuringElement(MORPH_RECT,Size(8,8));
+  Mat disk2 = imread("morphology/disk-2.png", CV_LOAD_IMAGE_GRAYSCALE);
+  Mat disk10 = imread("morphology/disk10.png", CV_LOAD_IMAGE_GRAYSCALE);
+
+  Mat frame_HSV, frame_threshold, frame_threshold_terrain;
+  Mat image, image2, temp, fr, open, squelette, dst, color_dst;
+  Mat BGR[3];
+  vector<Vec4i> lines;
+
   image = imread(imsname, CV_LOAD_IMAGE_COLOR);
   image2 = imread(imsname, CV_LOAD_IMAGE_COLOR);
+
 
   if (!image.data)
   {
@@ -111,14 +124,9 @@ void process(const char *imsname){
     return;
   }
 
-  Mat kernel = getStructuringElement(MORPH_RECT,Size(3,3));
-  Mat kernel2 = imread("morphology/disk-30.png", CV_LOAD_IMAGE_GRAYSCALE);
-  Mat kernel3 = getStructuringElement(MORPH_RECT,Size(5,5));
-  Mat kernel4 = getStructuringElement(MORPH_RECT,Size(8,8));
-  Mat frame_HSV, frame_threshold, frame_threshold_terrain;
 
   //imshow("image", image);
-  Mat BGR[3];
+
   split(image, BGR);
   dilate(BGR[0], BGR[0], kernel3);
   dilate(BGR[1], BGR[1], kernel3);
@@ -130,7 +138,8 @@ void process(const char *imsname){
   //cvtColor(image, frame_HSV, COLOR_BGR2HSV);
 
   // inRange(frame_HSV, Scalar(0, 150, 150), Scalar(255, 255, 255), frame_threshold_terrain);
-  inRange(image, Scalar(0, 64, 170), Scalar(255, 255, 255), frame_threshold_terrain); //RGB
+  //----RGB----
+  inRange(image, Scalar(0, 64, 170), Scalar(255, 255, 255), frame_threshold_terrain);
 
 
   //for(int i = 0; i < 1; i++){
@@ -140,13 +149,13 @@ void process(const char *imsname){
   //imshow("terrain_bin", frame_threshold_terrain);
 
   dilate(frame_threshold_terrain, frame_threshold_terrain, kernel3);
-  dilate(frame_threshold_terrain, frame_threshold_terrain, kernel3);  
-  dilate(frame_threshold_terrain, frame_threshold_terrain, kernel);  
+  dilate(frame_threshold_terrain, frame_threshold_terrain, kernel3);
+  dilate(frame_threshold_terrain, frame_threshold_terrain, kernel);
 
   //dilate(frame_threshold_terrain, frame_threshold_terrain, kernel3);
   //dilate(frame_threshold_terrain, frame_threshold_terrain, kernel);
   imshow("terrain_bin", frame_threshold_terrain);
- 
+
   //}
 
   inRange(frame_HSV, Scalar(low_H, low_S, low_V), Scalar(high_H, high_S, high_V), frame_threshold);
@@ -155,8 +164,8 @@ void process(const char *imsname){
   imshow("lines erode_bin", frame_threshold);
 
 
-  Mat fr;
 
+  //----Extraction du terrain----
   subtract(frame_threshold, frame_threshold_terrain, fr);
 
   //for(int i = 0; i < 1; i++){
@@ -164,32 +173,23 @@ void process(const char *imsname){
   imshow("subtract", fr);
   //}
 
-  Mat disk2 = imread("morphology/disk-2.png", CV_LOAD_IMAGE_GRAYSCALE);
-  Mat disk10 = imread("morphology/disk10.png", CV_LOAD_IMAGE_GRAYSCALE);
-
-  Mat open,squelette, dst, color_dst;
-
   morphologyEx(fr, fr, MORPH_OPEN, disk2);
 
   // imshow("open",open);
   // waitKey(0);
 
-  //Skeleton
-  //--------
+  //-----Skeleton-----
   squelette=skeleton(disk2,fr);
   imshow("squelette",squelette);
 
-
-
-  //Hough
-  vector<Vec4i> lines;
-  //threshodl élévé : moins de lignes
+  //-----Hough-----
+  //threshold élévé : moins de lignes
   int threshold=55;
   HoughLinesP( squelette, lines, 1, CV_PI/180, threshold, 50, 100 );
 
-    //Traitement des lignes sorties par Hough
-    //---------------------------------------
-    //Ajouter le coefficient directeur
+  //Traitement des lignes sorties par Hough
+  //---------------------------------------
+  //Ajouter le coefficient directeur
   if(lines.size() != 0){
     double coeficients[lines.size()][2];
     double label[lines.size()] = {0};
