@@ -8,6 +8,7 @@ Sujet : Détection des lignes du terrain
 
 exemple:
 <code>$ ./line_detector 0 data/log1/144-rgb.png</code>
+
 ##Pour générer une vidéo à partir de l'ensemble des images d'un dossier :
 <code>$ ./line_detector 1 chemin/directory_name</code>
 
@@ -20,3 +21,11 @@ Chaque image insérée à la vidéo sera affichée. Rester appuyé sur la touche
 
 ##Pour générer une vidéo à partir de log1:
 <code>$ make video</code>
+
+##Attention
+Il a été remarqué qu'une ligne du code ne fonctionne pas sur certaines machines
+Ligne 133
+<code>$ double label[lines.size()] = {0}; </code>
+
+S'il s'avère que vous rencontrez cette erreur, remplacez cette ligne de code par :
+<code>$ double label[lines.size()]; </code>

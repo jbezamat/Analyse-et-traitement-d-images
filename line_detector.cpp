@@ -82,7 +82,7 @@ Mat process(Mat image){
   dilate(BGR[1], BGR[1], kernel3);
   dilate(BGR[2], BGR[2], kernel3);
   merge(BGR, 3,frame_HSV);
-  
+
   //----RGB----
   inRange(image, Scalar(0, 64, 170), Scalar(255, 255, 255), frame_threshold_terrain);
 
@@ -128,6 +128,8 @@ Mat process(Mat image){
   //Ajouter le coefficient directeur
   if(lines.size() != 0){
     double coeficients[lines.size()][2];
+
+    //Attention : si erreur remplacez par double label[lines.size()];
     double label[lines.size()] = {0};
 
     for( size_t i = 0; i < lines.size(); i++ ){
@@ -254,7 +256,7 @@ Mat process(Mat image){
       }
     }
 
-  
+
     for(int k = 1; k <= lab; k++){
       int R = rand()%255;
       int G = rand()%255;
