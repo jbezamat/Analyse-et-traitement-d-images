@@ -62,20 +62,22 @@ Mat skeleton(Mat se, Mat ims){
 }
 
 Mat process(Mat image){
-  Mat temp;
   Mat image2 = image.clone();
-
+  //Elements de traitement
   Mat kernel = getStructuringElement(MORPH_RECT,Size(3,3));
   Mat kernel2 = imread("morphology/disk-30.png", CV_LOAD_IMAGE_GRAYSCALE);
   Mat kernel3 = getStructuringElement(MORPH_RECT,Size(5,5));
   Mat kernel4 = getStructuringElement(MORPH_RECT,Size(8,8));
-  Mat frame_HSV, frame_threshold, frame_threshold_terrain;
+  Mat disk2 = imread("morphology/disk-2.png", CV_LOAD_IMAGE_GRAYSCALE);
+  Mat disk10 = imread("morphology/disk10.png", CV_LOAD_IMAGE_GRAYSCALE);
 
-  //// imshow("image", image);
-  // BGR[0]=Mat::zeros(image.size(),CV_32F);
-  // BGR[1]=Mat::zeros(image.size(),CV_32F);
-  // BGR[2]=Mat::zeros(image.size(),CV_32F);
+  Mat frame_HSV, frame_threshold, frame_threshold_terrain;
+  Mat temp, fr, open, squelette, dst, color_dst;
   Mat BGR[3];
+  vector<Vec4i> lines;
+
+  //imshow("image", image);
+
   split(image, BGR);
   dilate(BGR[0], BGR[0], kernel3);
   dilate(BGR[1], BGR[1], kernel3);
@@ -86,7 +88,8 @@ Mat process(Mat image){
   //cvtColor(image, frame_HSV, COLOR_BGR2HSV);
 
   // inRange(frame_HSV, Scalar(0, 150, 150), Scalar(255, 255, 255), frame_threshold_terrain);
-  inRange(image, Scalar(0, 64, 170), Scalar(255, 255, 255), frame_threshold_terrain); //RGB
+  //----RGB----
+  inRange(image, Scalar(0, 64, 170), Scalar(255, 255, 255), frame_threshold_terrain);
 
   //for(int i = 0; i < 1; i++){
   //// imshow("lines", frame_threshold_terrain);
@@ -99,7 +102,7 @@ Mat process(Mat image){
   dilate(frame_threshold_terrain, frame_threshold_terrain, kernel);
   //dilate(frame_threshold_terrain, frame_threshold_terrain, kernel3);
   //dilate(frame_threshold_terrain, frame_threshold_terrain, kernel);
-  // imshow("terrain_bin", frame_threshold_terrain);
+  //imshow("terrain_bin", frame_threshold_terrain);
 
   //}
 
@@ -108,8 +111,8 @@ Mat process(Mat image){
   morphologyEx(frame_threshold, frame_threshold, MORPH_CLOSE, kernel4);
   // imshow("lines erode_bin", frame_threshold);
 
-  Mat fr;
 
+  //----Extraction du terrain----
   subtract(frame_threshold, frame_threshold_terrain, fr);
 
   //for(int i = 0; i < 1; i++){
@@ -117,35 +120,26 @@ Mat process(Mat image){
   // imshow("subtract", fr);
   //}
 
-  Mat disk2 = imread("morphology/disk-2.png", CV_LOAD_IMAGE_GRAYSCALE);
-  Mat disk10 = imread("morphology/disk10.png", CV_LOAD_IMAGE_GRAYSCALE);
-
-  Mat open,squelette, dst, color_dst;
-
   morphologyEx(fr, fr, MORPH_OPEN, disk2);
 
   // // imshow("open",open);
   // waitKey(0);
 
-  //Skeleton
-  //--------
+  //-----Skeleton-----
   squelette=skeleton(disk2,fr);
   // imshow("squelette",squelette);
 
-
-
-  //Hough
-  vector<Vec4i> lines;
-  //threshodl élévé : moins de lignes
+  //-----Hough-----
+  //threshold élévé : moins de lignes
   int threshold=55;
   HoughLinesP( squelette, lines, 1, CV_PI/180, threshold, 50, 100 );
 
-    //Traitement des lignes sorties par Hough
-    //---------------------------------------
-    //Ajouter le coefficient directeur
+  //Traitement des lignes sorties par Hough
+  //---------------------------------------
+  //Ajouter le coefficient directeur
   if(lines.size() != 0){
     double coeficients[lines.size()][2];
-    double label[lines.size()]; // = {0};
+    double label[lines.size()] = {0};
 
     for( size_t i = 0; i < lines.size(); i++ ){
 
@@ -297,7 +291,7 @@ Mat process(Mat image){
     }
   }
   // namedWindow( "Detected Lines", 1 );
-  // // imshow( "Detected Lines", image );
+  imshow( "Detected Lines", image );
   waitKey(0);
   return image;
 }
@@ -369,18 +363,19 @@ int main( int argc, char* argv[] ){
 
   clock_t t;
   t = clock();
-  size_t len = strlen(argv[1]);
+  // size_t len = strlen(argv[1]);
 
-  char* c = argv[1];
-  std::cout << c[len-1] << '\n';
-  if(c == "/"){
-      std::cerr << "ok" << '\n';
-      process_video(argv[1]);
-  }
-  else{
-    std::cout << "pas ok" << '\n';
-    process(argv[1]);
-  }
+  // char* c = argv[1];
+  // std::cout << c[len-1] << '\n';
+  process_video(argv[1]);
+  // if(c == "/"){
+  //     std::cerr << "ok" << '\n';
+  //     process_video(argv[1]);
+  // }
+  // else{
+  //   std::cout << "pas ok" << '\n';
+  //   process(argv[1]);
+  // }
   t = clock() - t;
   cout << "Exec time: " << ((float)t) / CLOCKS_PER_SEC << " s" << endl;
   return EXIT_SUCCESS;
